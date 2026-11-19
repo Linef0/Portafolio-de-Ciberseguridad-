@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>line@secops:~ | Line Franco</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #050807;
+      --panel-bg: #0c1210;
+      --panel-elevated: #111916;
+      --border-dim: #1c2b25;
+      --border-accent: rgba(0, 255, 136, 0.35);
+      --green-cyber: #00ff88;
+      --green-soft: rgba(0, 255, 136, 0.12);
+      --red-alert: #ff3b30;
+      --text-primary: #eef6f2;
+      --text-secondary: #8fa399;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background-color: var(--bg-void);
+      background-image:
+        radial-gradient(circle at 85% 10%, rgba(0, 255, 136, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 10% 85%, rgba(255, 59, 48, 0.07) 0%, transparent 42%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 20px 16px 64px;
+    }
+
+    .mono {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .shell {
+      max-width: 1120px;
+      margin: 0 auto;
+      border: 1px solid var(--border-dim);
+      border-radius: 14px;
+      background: rgba(8, 13, 11, 0.92);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.75);
+      overflow: hidden;
+    }
+
+    /* Barra superior estilo ventana de sistema */
+    .sys-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 12px 20px;
+      background: var(--panel-elevated);
+      border-bottom: 1px solid var(--border-dim);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .win-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot.r { background: #ff5f56; }
+    .dot.y { background: #ffbd2e; }
+    .dot.g { background: #27c93f; }
+
+    .sys-nav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .sys-nav a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .sys-nav a:hover {
+      color: var(--green-cyber);
+    }
+
+    .status-pill {
+      color: var(--green-cyber);
+      background: var(--green-soft);
+      border: 1px solid var(--border-accent);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+    }
+
+    /* Contenido principal */
+    .main-grid {
+      padding: 28px;
+      display: grid;
+      grid-template-columns: 1.35fr 0.95fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-dim);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .span-2 {
+      grid-column: 1 / -1;
+    }
+
+    /* Hero terminal */
+    .prompt-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--green-cyber);
+      margin-bottom: 10px;
+    }
+
+    .hero-name {
+      font-size: clamp(2.1rem, 4.5vw, 3.2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.08;
+      margin-bottom: 12px;
+    }
+
+    .hero-role {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      margin-bottom: 18px;
+    }
+
+    .hero-role strong {
+      color: var(--text-primary);
+    }
+
+    .bio-copy {
+      color: var(--text-secondary);
+      font-size: 0.96rem;
+      line-height: 1.65;
+      margin-bottom: 22px;
+    }
+
+    .bio-copy span.hl {
+      color: var(--green-cyber);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.88rem;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn-exec {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.84rem;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      background: var(--green-cyber);
+      color: #04110a;
+      border: 1px solid var(--green-cyber);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .btn-exec:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 255, 136, 0.25);
+    }
+
+    .btn-ghost {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.84rem;
+      font-weight: 500;
+      text-decoration: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border-dim);
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--green-cyber);
+      color: var(--green-cyber);
+    }
+
+    /* Consola interactiva lateral */
+    .console-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: #070b0a;
+      border: 1px solid var(--border-dim);
+      border-radius: 12px;
+      padding: 20px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.82rem;
+    }
+
+    .console-header {
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-dim);
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .console-output {
+      color: #c7dcd2;
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .console-output .k { color: var(--green-cyber); }
+    .console-output .w { color: var(--red-alert); }
+
+    .cmd-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .cmd-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.74rem;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: var(--panel-elevated);
+      color: var(--green-cyber);
+      border: 1px solid var(--border-dim);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .cmd-btn:hover {
+      background: var(--green-soft);
+      border-color: var(--green-cyber);
+    }
+
+    /* Títulos de módulo */
+    .module-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .module-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--green-cyber);
+    }
+
+    .module-id {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* Tarjetas de conocimientos */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .skill-tile {
+      background: var(--panel-elevated);
+      border: 1px solid var(--border-dim);
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    .skill-tile .tag-code {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--red-alert);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .skill-tile h3 {
+      font-size: 1.05rem;
+      margin-bottom: 6px;
+    }
+
+    .skill-tile p {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+
+    /* Certificación y Educación */
+    .cert-layout {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      background: var(--panel-elevated);
+      border: 1px solid var(--border-dim);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .cert-img {
+      width: 105px;
+      height: 105px;
+      object-fit: contain;
+      flex-shrink: 0;
+      border-radius: 10px;
+    }
+
+    .cert-meta {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--green-cyber);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .cert-layout h3 {
+      font-size: 1.08rem;
+      margin-bottom: 6px;
+    }
+
+    .cert-layout p {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .edu-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .edu-row {
+      background: var(--panel-elevated);
+      border-left: 3px solid var(--green-cyber);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 16px;
+    }
+
+    .edu-row .yr {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.74rem;
+      color: var(--green-cyber);
+    }
+
+    .edu-row h3 {
+      font-size: 1rem;
+      margin: 2px 0;
+    }
+
+    .edu-row p {
+      font-size: 0.86rem;
+      color: var(--text-secondary);
+    }
+
+    /* Contacto */
+    .contact-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .mail-box {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--green-cyber);
+      background: var(--panel-elevated);
+      border: 1px solid var(--border-dim);
+      padding: 10px 16px;
+      border-radius: 8px;
+    }
+
+    .sys-footer {
+      padding: 14px 24px;
+      border-top: 1px solid var(--border-dim);
+      background: var(--panel-elevated);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      .skills-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .cert-layout {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <!-- Barra superior -->
+    <header class="sys-topbar">
+      <div class="win-controls">
+        <span class="dot r"></span>
+        <span class="dot y"></span>
+        <span class="dot g"></span>
+        <span style="margin-left: 8px; color: var(--text-primary);">line@secops:~/portfolio</span>
+      </div>
+
+      <nav class="sys-nav">
+        <a href="#conocimientos">./conocimientos</a>
+        <a href="#certificaciones">./certificaciones</a>
+        <a href="#educacion">./educacion</a>
+        <a href="#contacto">./contacto</a>
+      </nav>
+
+      <span class="status-pill">● ETHICAL_HACKING_FOCUS</span>
+    </header>
+
+    <main class="main-grid">
+      <!-- Panel Principal -->
+      <section class="panel">
+        <div class="prompt-tag">$ whoami && cat perfil.txt</div>
+        <h1 class="hero-name">Line Franco</h1>
+        <p class="hero-role">
+          Licenciatura en Ciberseguridad • <strong>Universidad Tecnológica de Panamá</strong>
+        </p>
+        <p class="bio-copy">
+          Apasionada por la ciberseguridad, con enfoque en <span class="hl">vulnerabilidades</span> y <span class="hl">hacking ético</span>. Cuento con conocimientos en <span class="hl">redes</span>, <span class="hl">vulnerabilidades</span> y <span class="hl">sistemas operativos</span> para analizar cómo fallan los sistemas y contribuir a protegerlos.
+        </p>
+        <div class="action-row">
+          <a href="#contacto" class="btn-exec">./contactar.sh</a>
+          <a href="#certificaciones" class="btn-ghost">ver_credenciales</a>
+        </div>
+      </section>
+
+      <!-- Consola interactiva rápida -->
+      <aside class="console-box">
+        <div>
+          <div class="console-header">
+            <span>session_inspector</span>
+            <span style="color: var(--green-cyber);">ACTIVE</span>
+          </div>
+          <div id="console-screen" class="console-output">
+            <div><span class="k">USER:</span> Line Franco</div>
+            <div><span class="k">DEGREE:</span> Lic. Ciberseguridad (UTP)</div>
+            <div><span class="k">CORE:</span> Redes, Vulnerabilidades, SO</div>
+            <div><span class="w">INTEREST:</span> Vulnerabilidades &amp; Hacking Ético</div>
+          </div>
+        </div>
+        <div class="cmd-buttons">
+          <button type="button" class="cmd-btn" onclick="runCmd('skills')">--skills</button>
+          <button type="button" class="cmd-btn" onclick="runCmd('edu')">--education</button>
+          <button type="button" class="cmd-btn" onclick="runCmd('mail')">--email</button>
+          <button type="button" class="cmd-btn" onclick="runCmd('reset')">clear</button>
+        </div>
+      </aside>
+
+      <!-- Conocimientos -->
+      <section id="conocimientos" class="panel span-2">
+        <div class="module-head">
+          <h2 class="module-title">// CONOCIMIENTOS_CLAVE</h2>
+          <span class="module-id">MOD_01</span>
+        </div>
+        <div class="skills-grid">
+          <div class="skill-tile">
+            <span class="tag-code">[NET_LAYER]</span>
+            <h3>Redes</h3>
+            <p>Fundamentos de redes, comunicación entre nodos y estructura de conectividad.</p>
+          </div>
+          <div class="skill-tile">
+            <span class="tag-code">[VULN_SCAN]</span>
+            <h3>Vulnerabilidades</h3>
+            <p>Identificación y análisis de debilidades y puntos de exposición en sistemas.</p>
+          </div>
+          <div class="skill-tile">
+            <span class="tag-code">[OS_INTERNALS]</span>
+            <h3>Sistemas Operativos</h3>
+            <p>Comprensión y manejo de sistemas operativos aplicados al entorno de seguridad.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Certificaciones -->
+      <section id="certificaciones" class="panel">
+        <div class="module-head">
+          <h2 class="module-title">// CERTIFICACIONES</h2>
+          <span class="module-id">MOD_02</span>
+        </div>
+        <div class="cert-layout">
+          <img
+            src="introduction-to-cybersecurity.png"
+            alt="Insignia Cisco Networking Academy Introduction to Cybersecurity"
+            class="cert-img"
+          />
+          <div>
+            <span class="cert-meta">CISCO NETWORKING ACADEMY • OCT 2026</span>
+            <h3>Introduction to Cybersecurity</h3>
+            <p>
+              Bases de seguridad en línea, amenazas y vulnerabilidades comunes, y medidas de protección.
+            </p>
+            <a href="certificado-cisco.pdf" target="_blank" rel="noopener" class="btn-ghost">
+              abrir certificado.pdf ↗
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Educación -->
+      <section id="educacion" class="panel">
+        <div class="module-head">
+          <h2 class="module-title">// FORMACIÓN_ACADÉMICA</h2>
+          <span class="module-id">MOD_03</span>
+        </div>
+        <div class="edu-stack">
+          <div class="edu-row">
+            <span class="yr">EN CURSO</span>
+            <h3>Licenciatura en Ciberseguridad</h3>
+            <p>Universidad Tecnológica de Panamá</p>
+          </div>
+          <div class="edu-row">
+            <span class="yr">GRADUADA • 2025</span>
+            <h3>Bachiller en Ciencias</h3>
+            <p>Colegio Belisario Villar Pérez</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contacto -->
+      <section id="contacto" class="panel span-2">
+        <div class="module-head">
+          <h2 class="module-title">// CONTACTO_DIRECTO</h2>
+          <span class="module-id">MOD_04</span>
+        </div>
+        <div class="contact-bar">
+          <span class="mail-box">✉ linefr0933@gmail.com</span>
+          <div class="action-row">
+            <a href="mailto:linefr0933@gmail.com" class="btn-exec">Enviar correo</a>
+            <a href="https://github.com/" target="_blank" rel="noopener" class="btn-ghost">GitHub</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="sys-footer">
+      <span>Line Franco • Ciberseguridad &amp; Hacking Ético</span>
+      <span>GitHub Pages • 2026</span>
+    </footer>
+  </div>
+
+  <script>
+    function runCmd(type) {
+      const screen = document.getElementById('console-screen');
+      if (type === 'skills') {
+        screen.innerHTML =
+          '<div><span class="k">$ list_skills</span></div>' +
+          '<div>• Redes</div>' +
+          '<div>• Vulnerabilidades</div>' +
+          '<div>• Sistemas Operativos</div>' +
+          '<div><span class="w">• Hacking Ético</span></div>';
+      } else if (type === 'edu') {
+        screen.innerHTML =
+          '<div><span class="k">$ cat education.log</span></div>' +
+          '<div>• Lic. Ciberseguridad — UTP</div>' +
+          '<div>• Bachiller en Ciencias (2025) — Belisario Villar Pérez</div>';
+      } else if (type === 'mail') {
+        screen.innerHTML =
+          '<div><span class="k">$ echo $CONTACT</span></div>' +
+          '<div>linefr0933@gmail.com</div>';
+      } else {
+        screen.innerHTML =
+          '<div><span class="k">USER:</span> Line Franco</div>' +
+          '<div><span class="k">DEGREE:</span> Lic. Ciberseguridad (UTP)</div>' +
+          '<div><span class="k">CORE:</span> Redes, Vulnerabilidades, SO</div>' +
+          '<div><span class="w">INTEREST:</span> Vulnerabilidades &amp; Hacking Ético</div>';
+      }
+    }
+  </script>
+</body>
+</html>
